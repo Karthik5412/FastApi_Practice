@@ -1,9 +1,20 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from products_class import Product
 from database import session, engine
 import db_model 
+from sqlalchemy.orm import Session
+
 app = FastAPI()
 db_model.base.metadata.create_all(engine)
+
+def get_db() :
+    db = session()
+    
+    try :
+        yield db
+        
+    finally :
+        db.close()
 
 @app.get('/')
 def greet() :
@@ -23,11 +34,11 @@ products = [
 ]
 
 @app.get('/products')
-def all_products() :
-    db = session()
-    db.query()
+def all_products(db : Session = Depends(get_db)) :
+    # db = session()
+    items = db.query(db_model.dbms).all()
     
-    return products
+    return items
 
 @app.get('/product/{id}')
 def product(id : int) :
@@ -66,3 +77,20 @@ def deleting_product(id : int) :
             products.remove(products[i])
             
             return 'Product Deleted Successfully'
+        
+        
+        
+def db_initialize() :
+    
+    db = session()
+    
+    for product in products :
+        
+        count = db.query(db_model.dbms).count
+        
+        if count == 0 :
+            db.add(db_model.dbms(**product.model_dump()))
+            
+            db.commit()
+        
+db_initialize()
