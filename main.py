@@ -3,8 +3,23 @@ from products_class import Product
 from database import session, engine
 import db_model 
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "http://localhost:8501",  
+    "http://127.0.0.1:8501",
+]
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["*"]
+)
+
 db_model.base.metadata.create_all(engine)
 
 def get_db() :
@@ -16,9 +31,9 @@ def get_db() :
     finally :
         db.close()
 
-@app.get('/')
-def greet() :
-    return 'My First FastApi Program'
+# @app.get('/')
+# def greet() :
+#     return 'My First FastApi Program'
 
 products = [
     Product(id=1, name='Smartphone', describ='Mobile Device', price=25000.0),
@@ -33,7 +48,7 @@ products = [
     Product(id=10, name='Coffee Mug', describ='Ceramic Cup', price=600.0)
 ]
 
-@app.get('/products')
+@app.get('/')
 def all_products(db : Session = Depends(get_db)) :
     # db = session()
     items = db.query(db_model.dbms).all()
@@ -60,7 +75,7 @@ def add_product(product : Product, db : Session = Depends(get_db)) :
     
     items = db.query(db_model.dbms).all()
     
-    return items
+    return 'Item Added'
 
 @app.put('/product') 
 def update_product(id : int, product : Product, db : Session = Depends(get_db)) :
