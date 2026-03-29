@@ -41,42 +41,54 @@ def all_products(db : Session = Depends(get_db)) :
     return items
 
 @app.get('/product/{id}')
-def product(id : int) :
+def product(id : int, db : Session = Depends(get_db) ) :
     
-    if id -1 <= len(products) :
-        return products[id - 1]
+    item = db.query(db_model.dbms).filter(db_model.dbms.id == id).first()
+    
+    if item:
+        return item
     
     else :
         return 'There is no Id for it'
     
     
 @app.post('/product')
-def add_product(product : Product) :
+def add_product(product : Product, db : Session = Depends(get_db)) :
     
-    products.append(product)
+    db.add(db_model.dbms(**product.model_dump()))
+    db.commit()
     
-    return product
+    items = db.query(db_model.dbms).all()
+    
+    return items
 
 @app.put('/product') 
-def update_product(id : int, product : Product) :
-    for i in range(len(products)) :
-        if products[i].id == id :
-            products[i] = product
-            
-            return "product added successfully"
-        
+def update_product(id : int, product : Product, db : Session = Depends(get_db)) :
+    item =db.query(db_model.dbms).filter(db_model.dbms.id == id).first()
+    
+    if item :
+        item.name = product.name
+        item.price = product.price
+        item.describ = product.describ
     else :
-        products.append(product)
-        
-        return 'product added successfully'
+        db.add(db_model.dbms(**product.model_dump()))
+    
+    db.commit()
+    
+    return db.query(db_model.dbms).filter(db_model.dbms.id == id).first()
     
 @app.delete('/product')
-def deleting_product(id : int) :
-    for i in range(len(products)) :
-        if products[i].id == id :
-            products.remove(products[i])
-            
-            return 'Product Deleted Successfully'
+def deleting_product(id : int, db : Session = Depends(get_db)) :
+    
+    item = db.query(db_model.dbms).filter(db_model.dbms.id == id).first()
+    
+    if item :
+        db.delete(item)
+        db.commit()
+        return 'Product Deleted Successfully'
+    
+    else :
+        return 'No Such Id'
         
         
         
