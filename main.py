@@ -31,22 +31,7 @@ def get_db() :
     finally :
         db.close()
 
-# @app.get('/')
-# def greet() :
-#     return 'My First FastApi Program'
 
-products = [
-    Product(id=1, name='Smartphone', describ='Mobile Device', price=25000.0),
-    Product(id=2, name='Laptop', describ='Portable Computer', price=55000.0),
-    Product(id=3, name='Water Bottle', describ='Stainless Steel Bottle', price=1200.0),
-    Product(id=4, name='Backpack', describ='Travel Bag', price=2500.0),
-    Product(id=5, name='Ballpoint Pen', describ='Writing Instrument', price=50.0),
-    Product(id=6, name='Mechanical Keyboard', describ='External Peripherals', price=4500.0),
-    Product(id=7, name='Wireless Mouse', describ='Optical Mouse', price=1500.0),
-    Product(id=8, name='Notebook', describ='Hardbound Diary', price=400.0),
-    Product(id=9, name='Desk Lamp', describ='LED Study Light', price=1800.0),
-    Product(id=10, name='Coffee Mug', describ='Ceramic Cup', price=600.0)
-]
 
 @app.get('/')
 def all_products(db : Session = Depends(get_db)) :
@@ -85,12 +70,14 @@ def update_product(id : int, product : Product, db : Session = Depends(get_db)) 
         item.name = product.name
         item.price = product.price
         item.describ = product.describ
+        db.commit()
+    
+        return 'Successfully Updated'
     else :
         db.add(db_model.dbms(**product.model_dump()))
+        db.commit()
     
-    db.commit()
-    
-    return db.query(db_model.dbms).filter(db_model.dbms.id == id).first()
+        return 'Successfully Added'
     
 @app.delete('/product')
 def deleting_product(id : int, db : Session = Depends(get_db)) :

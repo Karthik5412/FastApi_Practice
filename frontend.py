@@ -48,7 +48,7 @@ left1, right1 = st.columns([70, 30])
 with left1 :
     with st.container(border= True) :
         
-        st.subheader('Add Product')
+        st.subheader('Add OR Update Product')
         
         col1, col2, col3, col4 = st.columns(4)
         with col1 :
@@ -61,9 +61,15 @@ with left1 :
             price = st.text_input('',placeholder='PRICE')
         payload = {'id' : id, 'name' : name, 'describ' : describ, 'price' : price}
         add_btn = st.button('Add')
+        up_btn = st.button('Update')
         
         if add_btn :
             response = requests.post(base_url, json= payload)
+            
+            st.success(response.json())
+            
+        if up_btn :
+            response = requests.put(f'{base_url}?id={id}', json=payload)
             
             st.success(response.json())
             
