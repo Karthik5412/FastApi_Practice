@@ -2,6 +2,19 @@ from pydantic import BaseModel, Field, AnyUrl, EmailStr, field_validator, model_
 from uuid import UUID
 from typing import Annotated, Optional, List
 
+# "dimensions": 
+class dimension_of_product(BaseModel) :
+    weight : Annotated[float, Field(le= 25, ge= 5, default= 5)]
+    height : Annotated[float, Field(le= 2, ge= 0.2, default= 0.5)]
+    depth : Annotated[float, Field(le= 50, ge= 5, default= 10)]
+
+#  seller_data
+class seller_model(BaseModel):
+    seller_name : Annotated[str,Field(min_length=7,max_length= 25, default='John Doe')]
+    seller_rating : Annotated[float, Field(lt= 5, gt= 0, default= None)]
+    is_verified : Annotated[bool, Field(default= None, strict= True)]
+
+
 class product(BaseModel):
     
     # "id"
@@ -42,13 +55,8 @@ class product(BaseModel):
         bool, Field(title= 'In stock', strict= True)
     ]
     
-    
-    # "dimensions": {
-    #   "width": 32.3,
-    #   "height": 1.5,
-    #   "depth": 40.9
-    # },
-    
+    # "dimensions"
+    dimensions : dimension_of_product
     
     # "tags"
     tags : Annotated[
@@ -59,19 +67,19 @@ class product(BaseModel):
     # "manufacturer_email"
     manufacturer_email : Annotated[EmailStr, Field(examples=['johdoe@gmail.com'])]
     
-    # "rating": 4.7,
+    # "rating": 
     rating : Annotated[
         float,
         Field(default=2.25, lt=5, gt=0, description='Rate about the product')
     ]
     
-    # "warehouse_location": "WA-01",
+    # "warehouse_location"
     warehouse_location : Annotated[
         str,
         Field(max_length= 5, min_length=3, examples=["WA-01"])
     ]
     
-    # "shipping_code": "SHP-WA-01-c552d4e8-128f-4609-ae06-42310fd7b35c"
+    # "shipping_code"
     shipping_code : Annotated[
         str,
         Field(max_length= 50, min_length=15, examples=["SHP-WA-01-c552d4e8-128f-4609-ae06-42310fd7b35c"])
@@ -88,6 +96,11 @@ class product(BaseModel):
         float,
         Field(default=5, le=50, ge=0, description='Available Discount')
     ]
+    
+    
+    # "seller_data"
+    seller_data : seller_model
+    
     
     # Field validation
     @field_validator('sku', mode='after')
