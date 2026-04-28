@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, AnyUrl, EmailStr
+from pydantic import BaseModel, Field, AnyUrl, EmailStr, field_validator, model_validator
 from uuid import UUID
 from typing import Annotated, Optional, List
 
@@ -66,7 +66,48 @@ class product(BaseModel):
     ]
     
     # "warehouse_location": "WA-01",
+    warehouse_location : Annotated[
+        str,
+        Field(max_length= 5, min_length=3, examples=["WA-01"])
+    ]
     
+    # "shipping_code": "SHP-WA-01-c552d4e8-128f-4609-ae06-42310fd7b35c"
+    shipping_code : Annotated[
+        str,
+        Field(max_length= 50, min_length=15, examples=["SHP-WA-01-c552d4e8-128f-4609-ae06-42310fd7b35c"])
+    ]
+    
+    
+    # Field validation
+    @field_validator('sku', mode='after')
+    @classmethod
+    def sku_validation(cls, val: str):
+        if '-' not in val:
+            raise ValueError('Need to put "-"')
+        
+        if not (len(val.split('-')[-1]) == 3 and  val.split('-')[-1].isnumeric()) :
+            raise ValueError('Ending three must end up like this "-124"')
+        
+        return val
+    
+    @field_validator('warehouse_location', mode='after')
+    @classmethod
+    def warehouse_validation(cls, val: str):
+        if '-' not in val:
+            raise ValueError('Need to put "-"')
+        
+        if not (val.split('-')[0].isupper() and  val.split('-')[-1].isdigit()) :
+            raise ValueError('Ending three must end up like this "KD-12"')
+        
+        return val
+    
+    @model_validator(mode='after')
+    @classmethod
+    def validating_shipping(cls, model : product) :
+        if not list(model.warehouse_location.split('-') ) <= list(model.shipping_code.split('-') ) :
+            raise ValueError('This Address is not correct')
+        
+        return model
 
 
 

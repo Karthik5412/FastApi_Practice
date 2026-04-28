@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query, Path
 import json
 from product_schema import product
-with open('data.json', 'r') as file :
+with open('new_data.json', 'r') as file :
     products = json.load(file)
     
 
