@@ -1,21 +1,38 @@
-from fastapi import FastAPI, Query, Path
+from fastapi import FastAPI, Query, Path, HTTPException
 import json
 from product_schema import product
-with open('final_data.json', 'r') as file :
-    products = json.load(file)
-    
-
+from uuid import uuid4
 app = FastAPI()
 
 
+def all_products():
+    with open('final_data.json', 'r') as file :
+        products = json.load(file)
+    
+    return products
+
+def save_product(products : list[dict]) -> None :
+    with open('dummy.json', 'w') as f :
+        json.dump(products, f, indent= 2)
+
+def add_product(item : dict) -> dict :
+    products = all_products()
+    
+    if any(p['sku'] == item['sku'] for p in products) :
+        raise ValueError('This sku is already exist')
+    
+    products.append(item)
+    save_product(products)
+    
+    return item
 
 @app.get('/')
 def root():
-    return products
+    return all_products()
 
 @app.get('/product/{id}')
 def get_product(id : int):
-    
+    products = all_products()
     item = [pro for pro in products if pro.get('id') == id]
     
     return item
@@ -34,6 +51,8 @@ def get_by_name(
     limit : int = Query(default= 10, ge=2, le=15, description= 'No. of items you need'),
     offset : int = Query(default= 0, description= 'Page No.')
 ) :
+    
+    products = all_products()
     
     if name:
         name = name.lower().strip()
@@ -60,6 +79,8 @@ def get_by_name(
 
 @app.get('/products/{tag}')
 def get_by_tag(tag : str = Path(..., examples=["office"], description='Search by category')) :
+    
+    products = all_products()
     items = []
     tag = tag.strip().lower()
     for p in products :
@@ -68,9 +89,17 @@ def get_by_tag(tag : str = Path(..., examples=["office"], description='Search by
     return items
 
 @app.post('/products/')
-def add_item(item : product) :
+def create_product(item : product) :
+    item_dict = item.model_dump(mode='json')
+    item_dict['id'] = str(uuid4())
     
-    return item
+    try :
+        add_product(item_dict)
+        
+    except ValueError:
+        raise HTTPException(status_code=404)
+    
+    return item.model_dump(mode='json')
 
 
 
