@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, AnyUrl, EmailStr, field_validator, model_validator
+from pydantic import BaseModel, Field, AnyUrl, EmailStr, field_validator, model_validator, computed_field
 from uuid import UUID
 from typing import Annotated, Optional, List
 
@@ -77,6 +77,17 @@ class product(BaseModel):
         Field(max_length= 50, min_length=15, examples=["SHP-WA-01-c552d4e8-128f-4609-ae06-42310fd7b35c"])
     ]
     
+    #"quantity_available"
+    quantity_available : Annotated[
+        int,
+        Field(ge=0, description='Quantity of product')
+    ]
+    
+    #"discount"
+    discount : Annotated[
+        float,
+        Field(default=5, le=50, ge=0, description='Available Discount')
+    ]
     
     # Field validation
     @field_validator('sku', mode='after')
@@ -104,10 +115,19 @@ class product(BaseModel):
     @model_validator(mode='after')
     @classmethod
     def validating_shipping(cls, model : product) :
-        if not list(model.warehouse_location.split('-') ) <= list(model.shipping_code.split('-') ) :
+        
+        if model.is_in_stock == True and model.quantity_available == 0 :
+            raise ValueError('If Stock how quaintity is 0')
+        
+        if not model.warehouse_location in model.shipping_code :
             raise ValueError('This Address is not correct')
         
         return model
 
+    
+    @computed_field
+    @property
+    def final_price(self) -> float :
+        return round(self.price * (1 - self.discount/100), 2)
 
 

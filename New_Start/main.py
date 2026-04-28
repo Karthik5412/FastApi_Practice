@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query, Path
 import json
 from product_schema import product
-with open('new_data.json', 'r') as file :
+with open('final_data.json', 'r') as file :
     products = json.load(file)
     
 
@@ -59,7 +59,7 @@ def get_by_name(
 
 
 @app.get('/products/{tag}')
-def get_by_tag(tag : str = Path(..., example="office", description='Search by category')) :
+def get_by_tag(tag : str = Path(..., examples=["office"], description='Search by category')) :
     items = []
     tag = tag.strip().lower()
     for p in products :
