@@ -1,110 +1,105 @@
-from fastapi import FastAPI, Depends
-from products_class import Product
-from database import session, engine
-import db_model 
-from sqlalchemy.orm import Session
-from fastapi.middleware.cors import CORSMiddleware
-
-origins = [
-    "http://localhost:8501",  
-    "http://127.0.0.1:8501",
-]
-
+from fastapi import FastAPI, Query, Path, HTTPException
+import json
+from product_schema import product
+from uuid import uuid4
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["*"]
-)
 
-db_model.base.metadata.create_all(engine)
-
-def get_db() :
-    db = session()
+def all_products():
+    with open('final_data.json', 'r') as file :
+        products = json.load(file)
     
-    try :
-        yield db
-        
-    finally :
-        db.close()
+    return products
 
+def save_product(products : list[dict]) -> None :
+    with open('dummy.json', 'w') as f :
+        json.dump(products, f, indent= 2)
 
+def add_product(item : dict) -> dict :
+    products = all_products()
+    
+    if any(p['sku'] == item['sku'] for p in products) :
+        raise ValueError('This sku is already exist')
+    
+    products.append(item)
+    save_product(products)
+    
+    return item
 
 @app.get('/')
-def all_products(db : Session = Depends(get_db)) :
-    # db = session()
-    items = db.query(db_model.dbms).all()
-    
-    return items
+def root():
+    return all_products()
 
 @app.get('/product/{id}')
-def product(id : int, db : Session = Depends(get_db) ) :
+def get_product(id : int):
+    products = all_products()
+    item = [pro for pro in products if pro.get('id') == id]
     
-    item = db.query(db_model.dbms).filter(db_model.dbms.id == id).first()
-    
-    if item:
-        return item
-    
-    else :
-        return 'There is no Id for it'
-    
-    
-@app.post('/product')
-def add_product(product : Product, db : Session = Depends(get_db)) :
-    
-    db.add(db_model.dbms(**product.model_dump()))
-    db.commit()
-    
-    items = db.query(db_model.dbms).all()
-    
-    return 'Item Added'
+    return item
 
-@app.put('/product') 
-def update_product(id : int, product : Product, db : Session = Depends(get_db)) :
-    item =db.query(db_model.dbms).filter(db_model.dbms.id == id).first()
+@app.get('/products')
+def get_by_name(
+    name : str = Query(
+        default= None, 
+        min_length=3, 
+        max_length= 10, 
+        description= 'Search By Name'
+        ), 
+    sort_activation : bool = Query(default=False, description= 'For activating Sorting'),
+    sort_by_price : str = Query(default= 'asc', description='Order by price'),
+    sort_by_name : str = Query(default= 'asc', description='Order by name'),
+    limit : int = Query(default= 10, ge=2, le=15, description= 'No. of items you need'),
+    offset : int = Query(default= 0, description= 'Page No.')
+) :
     
-    if item :
-        item.name = product.name
-        item.price = product.price
-        item.describ = product.describ
-        db.commit()
+    products = all_products()
     
-        return 'Successfully Updated'
+    if name:
+        name = name.lower().strip()
+        items = [p for p in products if name in p.get('product_name','').lower()]
     else :
-        db.add(db_model.dbms(**product.model_dump()))
-        db.commit()
+        items = products    
     
-        return 'Successfully Added'
-    
-@app.delete('/product')
-def deleting_product(id : int, db : Session = Depends(get_db)) :
-    
-    item = db.query(db_model.dbms).filter(db_model.dbms.id == id).first()
-    
-    if item :
-        db.delete(item)
-        db.commit()
-        return 'Product Deleted Successfully'
-    
-    else :
-        return 'No Such Id'
-        
-        
-        
-def db_initialize() :
-    
-    db = session()
-    
-    for product in products :
-        
-        count = db.query(db_model.dbms).count
-        
-        if count == 0 :
-            db.add(db_model.dbms(**product.model_dump()))
+    if sort_activation :
+        if sort_by_price :
+            rev = sort_by_price == 'desc'
             
-            db.commit()
+            items = sorted(items, key= lambda i : i.get('price', 0), reverse=rev)
         
-db_initialize()
+        if sort_by_name :
+            rev = sort_by_name == 'desc'
+            
+            items = sorted(items, key= lambda i : i.get('product_name').lower(), reverse=rev)
+        
+    start_point = offset * limit
+    items = items[start_point: limit + start_point]
+    
+    return {'Total Items' : len(items), 'Products' : items }
+
+
+@app.get('/products/{tag}')
+def get_by_tag(tag : str = Path(..., examples=["office"], description='Search by category')) :
+    
+    products = all_products()
+    items = []
+    tag = tag.strip().lower()
+    for p in products :
+        if tag in list(p.get('tags','')):
+            items.append(p)
+    return items
+
+@app.post('/products/')
+def create_product(item : product) :
+    item_dict = item.model_dump(mode='json')
+    item_dict['id'] = str(uuid4())
+    
+    try :
+        add_product(item_dict)
+        
+    except ValueError:
+        raise HTTPException(status_code=404)
+    
+    return item.model_dump(mode='json')
+
+
+
