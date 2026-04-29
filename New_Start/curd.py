@@ -3,14 +3,14 @@ from product_schema import product
 from uuid import uuid4
 
 def all_products():
-    with open('dummy.json', 'r') as file :
+    with open('with_seller.json', 'r') as file :
         products = json.load(file)
     
     return products
 
 def save_product(products : list[dict]) -> None :
     with open('dummy.json', 'w') as f :
-        json.dump(products, f, indent= 2)
+        json.dump(products, f, indent= 4)
 
 def add_product(item : dict) -> dict :
     products = all_products()
@@ -33,3 +33,26 @@ def remove_product(item_id : str) :
             return deleted
         
     raise ValueError('No Such Value')
+
+
+def change_product(item_id : str, data : dict):
+    products = all_products()
+    
+    for idx, val in enumerate(products) :
+        
+        if str(val['id']) == str(item_id) :
+            for key, fld in data.items():
+                if fld is None :
+                    continue
+                
+                if isinstance(fld, dict) and isinstance(val.get(key), dict) :
+                    val[key].update(fld)
+                else :
+                    val[key] = fld
+                    
+            products[idx] = val
+            
+            save_product(products)
+            return val
+    else :
+        raise ValueError('You entered incorrect id')
