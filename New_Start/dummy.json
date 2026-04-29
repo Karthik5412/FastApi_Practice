@@ -21101,32 +21101,5 @@
     "shipping_code": "SHP-IL-07-70e9c64c-851a-4834-8e37-32762974f3ee",
     "quantity_available": 99,
     "discount": 0.0
-  },
-  {
-    "id": "aaba1e30-ffe3-4823-9ef8-e778234f7548",
-    "product_name": "Silent Click Mouse",
-    "sku": "HP-NC-99-512",
-    "price": 1249.99,
-    "is_in_stock": true,
-    "dimensions": {
-      "weight": 5.0,
-      "height": 0.5,
-      "depth": 10.0
-    },
-    "tags": [
-      "string"
-    ],
-    "manufacturer_email": "karthik@gmail.com",
-    "rating": 2.25,
-    "warehouse_location": "WA-01",
-    "shipping_code": "SHP-WA-01-c552d4e8-128f-4609-ae06-42310fd7b35c",
-    "quantity_available": 2,
-    "discount": 5.0,
-    "seller_data": {
-      "seller_name": "Mark Doe",
-      "seller_rating": 1.0,
-      "is_verified": true
-    },
-    "final_price": 1187.49
   }
 ]

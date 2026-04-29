@@ -1,30 +1,11 @@
 from fastapi import FastAPI, Query, Path, HTTPException
 import json
 from product_schema import product
-from uuid import uuid4
+from uuid import uuid4, UUID
+from curd import all_products, add_product, remove_product
+
 app = FastAPI()
 
-
-def all_products():
-    with open('final_data.json', 'r') as file :
-        products = json.load(file)
-    
-    return products
-
-def save_product(products : list[dict]) -> None :
-    with open('dummy.json', 'w') as f :
-        json.dump(products, f, indent= 2)
-
-def add_product(item : dict) -> dict :
-    products = all_products()
-    
-    if any(p['sku'] == item['sku'] for p in products) :
-        raise ValueError('This sku is already exist')
-    
-    products.append(item)
-    save_product(products)
-    
-    return item
 
 @app.get('/')
 def root():
@@ -102,4 +83,12 @@ def create_product(item : product) :
     return item.model_dump(mode='json')
 
 
-
+@app.delete('/products/{product_id}')
+def delete_product(product_id : UUID) :
+    
+    try :
+        response = remove_product(str(product_id))
+        return response
+    
+    except Exception as e:
+        raise HTTPException(status_code= 404)
