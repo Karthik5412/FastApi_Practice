@@ -1,8 +1,8 @@
-from fastapi import FastAPI, Query, Path, HTTPException
+from fastapi import FastAPI, Query, Path, HTTPException, Body
 import json
-from product_schema import product
+from product_schema import product, product_update
 from uuid import uuid4, UUID
-from curd import all_products, add_product, remove_product
+from curd import all_products, add_product, remove_product, change_product
 
 app = FastAPI()
 
@@ -92,3 +92,13 @@ def delete_product(product_id : UUID) :
     
     except Exception as e:
         raise HTTPException(status_code= 404)
+    
+@app.put('/product/{item_id}')
+def update_product(item_id : UUID = Path(...), data : product_update = Body(...) ) :
+    try :
+        
+        updated = change_product(item_id, data.model_dump(mode= 'json', exclude_unset=True))
+        
+        return updated
+    except ValueError as e:
+        raise HTTPException(status_code= 404, detail= str(e))
